@@ -1,0 +1,2 @@
+[all]
+NFS ansible_ssh_host=000.000.000.000 ansible_ssh_port=1234567890 ansible_ssh_user=none

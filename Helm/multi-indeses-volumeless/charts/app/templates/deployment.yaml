@@ -1,0 +1,87 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: app
+  labels:
+    component: application
+    role: app
+spec:
+  serviceName: "application"
+  replicas: {{ .Values.replicas }}
+  selector:
+    matchLabels:
+      role: app
+  template:
+    metadata:
+      labels:
+        component: application
+        role: app
+    spec:
+      tolerations:
+      - key: "node.kubernetes.io/unreachable"
+        operator: "Exists"
+        effect: "NoExecute"
+        tolerationSeconds: 2
+      - key: "node.kubernetes.io/not-ready"
+        operator: "Exists"
+        effect: "NoExecute"
+        tolerationSeconds: 2
+      terminationGracePeriodSeconds: 0
+      initContainers:
+      - name: install-nfs-client
+        image: alpine
+        command: ['sh', '-c', "apk add nfs-utils"]
+        securityContext:
+          privileged: true
+      - name: init-ds-vol1
+        image: busybox:1.28
+        command: ['sh', '-c', "until nslookup ds-vol1; do echo waiting for ds-vol1; sleep 2; done"]
+      - name: init-ds-vol2
+        image: busybox:1.28
+        command: ['sh', '-c', "until nslookup ds-vol2; do echo waiting for ds-vol2; sleep 2; done"]
+      - name: init-ds-vol3
+        image: busybox:1.28
+        command: ['sh', '-c', "until nslookup ds-vol3; do echo waiting for ds-vol3; sleep 2; done"]
+      imagePullSecrets:
+      - name: {{ .Values.secret }}
+      containers:
+      - name: app
+        image: {{ .Values.repo }}/{{ .Values.image }}
+#        image: alpine
+#        command:
+#         - /bin/sleep
+#         - "600"
+        imagePullPolicy: Always
+        stdin: true
+        tty: true
+        lifecycle:
+          postStart:
+             exec:
+               command: ["/bin/sh", "-c", "/app/utils/nfs.sh"]
+        securityContext:
+         privileged: true
+         capabilities:
+           add:
+            - SYS_ADMIN
+        ports:
+        - containerPort: {{ .Values.port }}
+          name: soap
+        volumeMounts:
+        - name: rule-sets
+          mountPath: /app/var/conf/customrules/
+        - name: config-files
+          mountPath: /app/var/conf/
+        - name: config-nfs
+          mountPath: /app/utils
+      volumes:
+      - name: config-nfs
+        configMap:
+          defaultMode: 0777
+          name: config-nfs
+      - name: config-files
+        configMap:
+          defaultMode: 420
+          name: config-files
+      - name: rule-sets
+        configMap:
+          name: rule-sets

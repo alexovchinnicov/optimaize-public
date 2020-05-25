@@ -1,0 +1,8 @@
+---
+# vars file for nfs-server
+
+dns_name: none.none
+app_name: nfs
+app_ver: itsthenetwork/nfs-server-alpine
+app_dir: /apps/nfs-server
+

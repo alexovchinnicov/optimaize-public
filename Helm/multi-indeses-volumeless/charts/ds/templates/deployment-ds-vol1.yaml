@@ -1,0 +1,48 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ds-vol1
+  labels:
+    component: application
+    role: ds-vol1
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      role: ds-vol1
+  template:
+    metadata:
+      labels:
+        component: application
+        role: ds-vol1
+    spec:
+      tolerations:
+      - key: "node.kubernetes.io/unreachable"
+        operator: "Exists"
+        effect: "NoExecute"
+        tolerationSeconds: 2
+      - key: "node.kubernetes.io/not-ready"
+        operator: "Exists"
+        effect: "NoExecute"
+        tolerationSeconds: 2
+      terminationGracePeriodSeconds: 0
+      imagePullSecrets:
+      - name: {{ .Values.secret }}
+      containers:
+      - name: ds-vol1
+        image: {{ .Values.repo }}/optimaize/dataset-vol1:latest
+        imagePullPolicy: Always
+        ports:
+        - name: nfs
+          containerPort: 2049
+          protocol: TCP
+        readinessProbe:
+          tcpSocket:
+            port: 2049
+          initialDelaySeconds: 5
+          periodSeconds: 10
+        livenessProbe:
+          tcpSocket:
+            port: 2049
+          initialDelaySeconds: 15
+          periodSeconds: 20

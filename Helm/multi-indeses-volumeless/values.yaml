@@ -1,0 +1,44 @@
+es:
+  enabled: true
+  global: {}
+  cluster_name: elasticsearch
+  image: docker.elastic.co/elasticsearch/elasticsearch:6.8.8
+  xpack:
+    monitoring: false
+    security: false
+  master:
+    replicas: 3
+    limits:
+      cpu: 1
+    env:
+      http: false
+      discovery_zen_minimum_master_nodes: 2
+      node_max_local_storage_nodes: 3
+      java_opts: -Xms256m -Xmx256m
+  client:
+    replicas: 1
+    maxreplicas: 3
+    minreplicas: 1
+    utilizationpercentage: 80
+    limits:
+      cpu: 3
+    env:
+      http: true
+      java_opts: -Xms256m -Xmx256m
+  data:
+    secret: d0ckerreg
+    replicas: 1
+    env:
+      http: false
+      java_opts: -Xms4g -Xmx4g
+app:
+  enabled: true
+  global: {}
+  repo: registry.com
+  image: optimaize/app:latest
+  secret: d0ckerreg
+  replicas: 2
+  port: 7777777
+ds:
+  repo: registry.com
+  secret: d0ckerreg

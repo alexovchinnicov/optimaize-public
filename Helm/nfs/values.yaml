@@ -1,0 +1,52 @@
+es:
+  enabled: true
+  global: {}
+  image: docker.elastic.co/elasticsearch/elasticsearch:6.8.8
+  cluster_name: elasticsearch
+  xpack:
+    monitoring: false
+    security: false
+  master:
+    replicas: 3
+    limits:
+      cpu: 1
+    env:
+      http: false
+      discovery_zen_minimum_master_nodes: 2
+      node_max_local_storage_nodes: 1
+      java_opts: -Xms256m -Xmx256m
+  client:
+    replicas: 2
+    limits:
+      cpu: 1
+    env:
+      http: true
+      java_opts: -Xms256m -Xmx256m
+  data:
+    replicas: 1
+    env:
+      http: false
+      java_opts: -Xms4g -Xmx4g
+  storage: 
+    name: nfs-es
+    net:
+      host: nfs.com
+      path: /app/es
+    pv:
+      size: 500Gi
+      mode: ReadWriteOnce
+app:
+  enabled: true
+  global: {}
+  image: registry.com/optimaize/app:latest
+  secret: d0ckerreg
+  replicas: 1
+  port: 777777
+  storage: 
+    name: nfs-app
+    net:
+      host: nfs.com
+      path: /app/data
+    pv:
+      size: 1000Gi
+      mode: ReadWriteMany

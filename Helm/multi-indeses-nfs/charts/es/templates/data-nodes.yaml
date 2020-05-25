@@ -1,0 +1,114 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: es-data
+  labels:
+    component: elasticsearch
+    role: data
+spec:
+  serviceName: "elasticsearch"
+  replicas: {{ .Values.data.replicas }}
+  selector:
+    matchLabels:
+      role: data
+  template:
+    metadata:
+      labels:
+        component: elasticsearch
+        role: data
+    spec:
+      tolerations:
+      - key: "node.kubernetes.io/unreachable"
+        operator: "Exists"
+        effect: "NoExecute"
+        tolerationSeconds: 2
+      - key: "node.kubernetes.io/not-ready"
+        operator: "Exists"
+        effect: "NoExecute"
+        tolerationSeconds: 2
+      terminationGracePeriodSeconds: 0
+      affinity:
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+          - weight: 100
+            podAffinityTerm:
+              labelSelector:
+                matchExpressions:
+                - key: role
+                  operator: In
+                  values:
+                  - data
+              topologyKey: kubernetes.io/hostname
+      initContainers:
+      - name: init-sysctl
+        image: busybox:1.27.2
+        command:
+        - sysctl
+        - -w
+        - vm.max_map_count=262144
+        securityContext:
+          privileged: true
+      - name: increase-fd-ulimit
+        image: busybox:1.27.2
+        command: ["sh", "-c", "ulimit -n 65536"]
+        securityContext:
+          privileged: true
+      securityContext:
+        runAsUser: 1000
+        runAsGroup: 1000
+        fsGroup: 0
+      containers:
+      - name: es-data
+        image: {{ .Values.image }}
+        env:
+        - name: NAMESPACE
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.namespace
+        - name: NODE_NAME
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.name
+        - name: CLUSTER_NAME
+          value: {{ .Values.cluster_name | quote }}
+        - name: XPACK_MON
+          value: {{ .Values.xpack.monitoring | quote }}
+        - name: XPACK_SEC
+          value: {{ .Values.xpack.security | quote }}
+        - name: NUMBER_OF_MASTERS
+          value: {{ .Values.master.replicas | quote }}
+        - name: NODE_MASTER
+          value: "false"
+        - name: NODE_INGEST
+          value: "false"
+        - name: NODE_DATA
+          value: "true"
+        - name: HTTP_ENABLE
+          value: {{ .Values.client.env.http | quote }}
+        - name: MAX_LOCAL_STORAGE_NODES
+          value: {{ .Values.master.env.node_max_local_storage_nodes | quote }}
+        - name: bootstrap.memory_lock
+          value: "false"
+        - name: discovery.zen.ping.unicast.hosts
+          value: "elasticsearch-discovery"
+        - name: ES_JAVA_OPTS
+          value: {{ .Values.data.env.java_opts }}
+        - name: NETWORK_HOST
+          value: _site_,_lo_
+        ports:
+        - containerPort: 9300
+          name: transport
+        volumeMounts:
+        - name: esconfig
+          mountPath: /usr/share/elasticsearch/config/elasticsearch.yml
+          subPath: elasticsearch.yml
+        - name: {{ .Values.storage.name }}
+          mountPath: /usr/share/elasticsearch/data
+          subPathExpr: $(NODE_NAME)
+      volumes:
+      - name : esconfig
+        configMap:
+          name: es-configmap
+      - name: {{ .Values.storage.name }}
+        persistentVolumeClaim:
+           claimName: {{ .Values.storage.name }}

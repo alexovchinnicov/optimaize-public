@@ -1,0 +1,26 @@
+apiVersion: v2
+appVersion: 0.0.1
+icon: https://www.nameapi.org/fileadmin/templates/nameprofiler/images/name-api-logo.png
+dependencies:
+- condition: es.enabled
+  name: es
+  tags:
+  - blablabla
+  - es
+  version: 0.0.1
+- condition: eshead.enabled
+  name: eshead
+  tags:
+  - blablabla
+  - eshead
+  version: 0.0.1
+- condition: app.enabled
+  name: app
+  tags:
+  - blablabla
+  - app
+  version: 0.0.1
+description: App for Kubernetes 
+name: blablabla
+type: application
+version: 0.0.1

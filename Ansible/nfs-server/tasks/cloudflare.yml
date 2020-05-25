@@ -1,0 +1,19 @@
+---
+# tasks file for nfs-server
+
+
+    - name: "Add A records for {{ app_name }}.{{ dns_name }}"
+      cloudflare_dns:
+#        zone: '{{ dnsname }}'
+        domain: '{{ dns_name }}'
+        type: A
+        record: '{{ app_name }}'
+        value: '{{ ansible_ssh_host }}'
+        solo: no
+        account_email: '{{ cloudflare_email }}'
+        account_api_token: '{{ cloudflare_api_token }}'
+        state: present
+      delegate_to: localhost
+      become: no
+#      run_once: true
+      tags: [ install, update, cf ]

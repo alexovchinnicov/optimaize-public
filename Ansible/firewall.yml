@@ -1,0 +1,9 @@
+---
+# vars file for firewall rules
+allowed_hosts: 
+# host1
+ - 000.000.000.000
+# host2
+ - 000.000.000.000
+# host3
+ - 000.000.000.000

@@ -1,0 +1,4 @@
+---
+# vars for Cloudflare
+cloudflare_email: none@none.none
+cloudflare_api_token: 1234567890

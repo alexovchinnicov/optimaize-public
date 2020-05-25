@@ -1,0 +1,55 @@
+apiVersion: v1
+data:
+  elasticsearch.yml: |
+    cluster:
+      name: ${CLUSTER_NAME}
+
+    node:
+      name: ${NODE_NAME}
+      master: ${NODE_MASTER}
+      data: ${NODE_DATA}
+      ingest: ${NODE_INGEST}
+      max_local_storage_nodes: ${MAX_LOCAL_STORAGE_NODES}
+
+    processors: ${PROCESSORS:1}
+
+    network.host: ${NETWORK_HOST}
+
+    path:
+      data: /usr/share/elasticsearch/data
+      logs: /usr/share/elasticsearch/logs
+
+    bootstrap:
+      memory_lock: false
+      system_call_filter: false
+
+    http:
+      enabled: ${HTTP_ENABLE}
+      #compression: true
+      #cors:
+        #enabled: ${HTTP_CORS_ENABLE}
+        #allow-origin: ${HTTP_CORS_ALLOW_ORIGIN}
+
+    discovery:
+      zen:
+        ping.unicast.hosts: ${DISCOVERY_SERVICE}
+        minimum_master_nodes: ${NUMBER_OF_MASTERS}
+
+    #xpack.license.self_generated.type: basic
+    xpack.security.enabled: ${XPACK_SEC}
+    xpack.monitoring.enabled: ${XPACK_MON}
+    #xpack.ml.enabled: false
+
+    cluster.routing.allocation.enable: all
+    cluster.routing.rebalance.enable: all
+    cluster.routing.allocation.allow_rebalance: indices_all_active
+    cluster.routing.allocation.disk.watermark.low: 90%
+
+    indices.query.bool.max_clause_count: 100000000
+
+    repositories.url.allowed_urls: ["http://*", "https://*"]
+
+kind: ConfigMap
+metadata:
+  creationTimestamp: null
+  name: es-configmap

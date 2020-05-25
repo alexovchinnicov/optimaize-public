@@ -1,0 +1,57 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: app
+  labels:
+    component: application
+    role: app
+spec:
+  serviceName: "application"
+  replicas: {{ .Values.replicas }}
+  selector:
+    matchLabels:
+      role: app
+  template:
+    metadata:
+      labels:
+        component: application
+        role: app
+    spec:
+      tolerations:
+      - key: "node.kubernetes.io/unreachable"
+        operator: "Exists"
+        effect: "NoExecute"
+        tolerationSeconds: 2
+      - key: "node.kubernetes.io/not-ready"
+        operator: "Exists"
+        effect: "NoExecute"
+        tolerationSeconds: 2
+      terminationGracePeriodSeconds: 0
+      imagePullSecrets:
+      - name: {{ .Values.secret }}
+      containers:
+      - name: app
+        image: {{ .Values.image }}
+        stdin: true
+        tty: true
+        ports:
+        - containerPort: {{ .Values.port }}
+          name: soap
+        volumeMounts:
+        - name: {{ .Values.storage.name }}
+          mountPath: /app/data/
+        - name: rule-sets
+          mountPath: /app/var/conf/customrules/
+        - name: config-files
+          mountPath: /app/var/conf/
+      volumes:
+      - name: {{ .Values.storage.name }}
+        persistentVolumeClaim:
+           claimName: {{ .Values.storage.name }}
+      - name: rule-sets
+        configMap:
+          name: rule-sets
+      - name: config-files
+        configMap:
+          defaultMode: 420
+          name: config-files

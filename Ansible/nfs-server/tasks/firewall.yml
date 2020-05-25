@@ -1,0 +1,43 @@
+---
+# tasks file for nfs-server
+
+    - name: Deny NFS connection for all (TCP)
+      ufw:
+       comment: Deny NFS connection for all
+       rule: reject
+       proto: tcp
+       port: '2049,111,32765,32766,32767'
+       log: yes
+      tags: [ install, update, fw ]
+
+    - name: Deny NFS connection for all (UDP)
+      ufw:
+       comment: Deny NFS connection for all
+       rule: reject
+       proto: udp
+       port: '2049,111,32765,32766,32767'
+       log: yes
+      tags: [ install, update, fw ]
+
+
+
+    - name: Allow NFS connection from k8s hosts (TCP)
+      ufw:
+       comment: Allow NFS
+       rule: allow
+       proto: tcp
+       port: '2049,111,32765,32766,32767'
+       src:  '{{ item }}'
+      with_items: '{{ allowed_hosts }}'
+      tags: [ install, update, fw ]
+
+    - name: Allow NFS connection from k8s hosts (UDP)
+      ufw:
+       comment: Allow NFS
+       rule: allow
+       proto: udp
+       port: '2049,111,32765,32766,32767'
+       src:  '{{ item }}'
+      with_items: '{{ allowed_hosts }}'
+      tags: [ install, update, fw ]
+

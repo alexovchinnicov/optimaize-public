@@ -1,0 +1,12 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: config-nfs
+data:
+  nfs.sh: |
+    mkdir -p /app/data/vol1
+    mount -t nfs -o ro,nfsvers=4.1 ds-vol1:/ /app/data/vol1/
+    mkdir -p /app/data/vol2
+    mount -t nfs -o ro,nfsvers=4.1 ds-vol2:/ /app/data/vol2/
+    mkdir -p /app/data/vol3
+    mount -t nfs -o ro,nfsvers=4.1 ds-vol3:/ /app/data/vol3/

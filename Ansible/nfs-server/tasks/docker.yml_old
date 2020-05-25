@@ -1,0 +1,77 @@
+---
+# tasks file for nfs-server
+
+     - name: Delete containers
+       docker_compose:
+          project_name: nfs
+          definition:
+            version: '2'
+            services:
+              nfs:
+#                network_mode: host
+                image: '{{ app_ver }}'
+          state: absent
+       tags: [ install, docker ]
+
+     - name: Run containers
+       docker_compose:
+         project_name: nfs
+         definition:
+           version: '2'
+           services:
+             nfs:
+# Running the container with --network host might improve network performance by 10% - 20% on a heavily-loaded server
+#               network_mode: host
+               image: '{{ app_ver }}'
+               container_name: nfs_server
+               hostname: nfs
+               restart: always
+               environment:
+# Set to 3, 4, 4.1, or 4.2 to fine tune the NFS protocol version. Enabling any version will also enable any lesser versions. e.g. 4.1 will enable versions 4.1, 4, and 3.
+#                 NFS_VERSION: '4.2'
+                 NFS_VERSION: '3'
+#                 NFS_VERSION: '4'
+#                 NFS_DISABLE_VERSION_3: 'true'
+# A good minimum is one thread per CPU core, but 4 or 8 threads per core is probably better. The default is one thread per CPU core.
+#                 NFS_SERVER_THREAD_COUNT: '4'
+#                 NFS_LOG_LEVEL: 'DEBUG'
+                 NFS_EXPORT_0: '/export/monitoring/grafana                  *(rw,async,insecure,fsid=0,crossmnt,no_subtree_check)'
+                 NFS_EXPORT_1: '/export/monitoring/prometheus-server        *(rw,sync,fsid=1,no_subtree_check,no_root_squash,no_all_squash,insecure)'
+                 NFS_EXPORT_2: '/export/monitoring/prometheus-alertmanager  *(rw,sync,fsid=2,no_subtree_check,no_root_squash,no_all_squash,insecure)'
+                 NFS_EXPORT_3: '/export/test                        *(rw,no_subtree_check)'
+               cap_add:
+                 - SYS_ADMIN
+                 - SYS_MODULE
+               volumes:
+                 - '/lib/modules:/lib/modules:ro'
+                 - '/etc/timezone:/etc/timezone:ro'
+                 - '/etc/localtime:/etc/localtime:ro'
+                 - '{{ app_dir }}/monitoring/grafana:/export/monitoring/grafana'
+                 - '{{ app_dir }}/monitoring/prometheus-server:/export/monitoring/prometheus-server'
+                 - '{{ app_dir }}/monitoring/prometheus-alertmanager:/export/monitoring/prometheus-alertmanager'
+#                 - '{{ app_dir }}:/export'
+               ports:
+#                 - '0.0.0.0:{{ app_port }}:{{ app_port }}'
+                 - '0.0.0.0:2049:2049'
+                 - '0.0.0.0:2049:2049/udp'
+                 - '0.0.0.0:111:111'
+                 - '0.0.0.0:32765:32765'
+                 - '0.0.0.0:32766:32766'
+                 - '0.0.0.0:32767:32767'
+                 - '0.0.0.0:111:111/udp'
+                 - '0.0.0.0:32765:32765/udp'
+                 - '0.0.0.0:32766:32766/udp'
+                 - '0.0.0.0:32767:32767/udp'
+               security_opt:
+                 - apparmor=optimaize-nfs
+       register: output
+       tags: [ install, docker ]
+
+     - debug:
+         var: output
+       tags: [ install, docker ]
+
+     - assert:
+         that:
+           - "nfs.nfs_server.state.running"
+       tags: [ install, docker ]

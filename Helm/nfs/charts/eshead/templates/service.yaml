@@ -1,0 +1,16 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: es-head
+  labels:
+    component: application
+    role: app
+spec:
+  selector:
+    component: application
+    role: app
+  ports:
+  - name: es-head
+    port: {{ .Values.podPort }}
+    protocol: TCP
+  clusterIP: None

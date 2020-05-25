@@ -1,0 +1,61 @@
+---
+# tasks file for nfs-server
+
+     - name: Delete containers
+       docker_compose:
+          project_name: nfs
+          definition:
+            version: '2'
+            services:
+              nfs:
+#                network_mode: host
+                image: '{{ app_ver }}'
+          state: absent
+       tags: [ install, docker ]
+
+     - name: Run containers
+       docker_compose:
+         project_name: nfs
+         definition:
+           version: '2'
+           services:
+             nfs:
+               image: '{{ app_ver }}'
+               container_name: nfs_server
+               hostname: nfs
+               restart: always
+               environment:
+                 SHARED_DIRECTORY: '/export'
+               cap_add:
+                 - SYS_ADMIN
+                 - SYS_MODULE
+               volumes:
+                 - '/lib/modules:/lib/modules:ro'
+                 - '/etc/timezone:/etc/timezone:ro'
+                 - '/etc/localtime:/etc/localtime:ro'
+                 - '{{ app_dir }}:/export'
+               ports:
+#                 - '0.0.0.0:{{ app_port }}:{{ app_port }}'
+                 - '0.0.0.0:2049:2049'
+                 - '0.0.0.0:2049:2049/udp'
+                 - '0.0.0.0:111:111'
+                 - '0.0.0.0:32765:32765'
+                 - '0.0.0.0:32766:32766'
+                 - '0.0.0.0:32767:32767'
+                 - '0.0.0.0:111:111/udp'
+                 - '0.0.0.0:32765:32765/udp'
+                 - '0.0.0.0:32766:32766/udp'
+                 - '0.0.0.0:32767:32767/udp'
+               security_opt:
+                 - apparmor=optimaize-nfs
+       register: output
+       tags: [ install, docker ]
+
+     - debug:
+         var: output
+       tags: [ install, docker ]
+
+     - assert:
+         that:
+           - "nfs.nfs_server.state.running"
+       tags: [ install, docker ]

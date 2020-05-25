@@ -1,0 +1,18 @@
+---
+# tasks file for nfs-server
+
+   - name: "Cloudflare's DNS steps"
+     include_tasks: cloudflare.yml
+     tags: [ update, install, cf ]
+
+   - name: Apparmor steps
+     include_tasks: apparmor.yml
+     tags: [ update, install, apparmor ]
+
+   - name: Application steps
+     include_tasks: docker.yml
+     tags: [ update, install, docker ]
+
+   - name: Firewall steps
+     include_tasks: firewall.yml
+     tags: [ update, install, fw ]

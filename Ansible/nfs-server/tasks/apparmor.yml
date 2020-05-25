@@ -1,0 +1,63 @@
+---
+# tasks file for nfs-server
+
+     - name: Install apparmor-utils package
+       package: name={{item}} state=present
+       with_items:
+        - apparmor-utils
+       tags: [ install, update, apparmor ]
+
+     - name: Create directory structure
+       file:
+        path: '{{ item.src }}'
+        state: 'directory'
+        mode: '{{ item.mode }}'
+        owner: '{{ item.owner }}'
+        group: '{{ item.group }}'
+       with_items:
+        - { src: "/etc/apparmor.d/abstractions/",  mode: "0755", owner: "root", group: "root" }
+        - { src: "/etc/apparmor.d/abstractions/lxc/",  mode: "0755", owner: "root", group: "root" }
+        - { src: "{{ app_dir }}",  mode: "0777", owner: "root", group: "root" }
+        - { src: "{{ app_dir }}/monitoring",  mode: "0777", owner: "root", group: "root" }
+        - { src: "{{ app_dir }}/monitoring/grafana",  mode: "0777", owner: "root", group: "root" }
+        - { src: "{{ app_dir }}/monitoring/prometheus-server",  mode: "0777", owner: "root", group: "root" }
+        - { src: "{{ app_dir }}/monitoring/prometheus-alertmanager",  mode: "0777", owner: "root", group: "root" }
+       tags: [ install, update, apparmor ]
+
+     - name: Copy custom apparmor rules on host
+       copy: >
+        src="{{ item.src }}"
+        dest="{{ item.dest }}"
+        mode="{{ item.mode }}"
+        owner="{{ item.owner }}"
+        group="{{ item.group }}"
+       with_items:
+        - { src: "files/container-base", dest: "/etc/apparmor.d/abstractions/lxc/container-base", mode: "0644", owner: "root", group: "root" }
+       tags: [ install, update, apparmor ]
+
+
+     - name: Generate profile file.
+       blockinfile: 
+        create: yes
+        path: '/tmp/optimaize-nfs'
+        block: |
+          #include <tunables/global>
+          profile optimaize-nfs flags=(attach_disconnected,mediate_deleted) {
+          #include <abstractions/lxc/container-base>
+           mount fstype=nfs*,
+           mount fstype=rpc_pipefs,
+          }
+       tags: [ install, update, apparmor ]
+
+
+     - name: Load profile into the kernel.
+       command: >
+                /sbin/apparmor_parser -r -W /tmp/optimaize-nfs
+       register: apparmor_result
+       tags: [ install, update, apparmor ]
+
+
+     - debug: msg="{{ apparmor_result.stdout.split('\n')[:-1] }}"
+       ignore_errors: True
+       tags: [ install, update, apparmor ]
+

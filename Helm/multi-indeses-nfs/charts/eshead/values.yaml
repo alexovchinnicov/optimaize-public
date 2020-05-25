@@ -1,0 +1,7 @@
+
+replicas: 1
+
+image: mobz/elasticsearch-head:5-alpine
+
+podPort: 9100
+
